@@ -1,6 +1,7 @@
 package org.example;
 
 import com.google.gson.Gson;
+import org.example.container.NodeTags;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -13,26 +14,23 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        int radius = 3000;
+        int radius = 2500;
 
         CartesianCoordinate cartesianCoordinate = new CartesianCoordinate(35.36231, -119.04136);
         // Define the Overpass API query
         String query = "[out:json];node(around:" + radius + ", " + cartesianCoordinate + ")[\"building\"=\"yes\"];out;";
-        String secondQuery = "[out:json];way(around:" + radius + ", " + cartesianCoordinate + ")[\"building\"=\"yes\"];out;";
+        String secondQuery = "[out:json];way(around:" + radius + ", " + cartesianCoordinate + ")[\"building\"=\"house\"];out;";
 
         // Check if the request was successful
         Gson gson = new Gson();
         OverpassResponse overpassResponse = gson.fromJson(QueryProcessor.processQuery(query), OverpassResponse.class);
         OverpassResponse overpassResponse1 = gson.fromJson(QueryProcessor.processQuery(secondQuery), OverpassResponse.class);
-        List<Node> nodes = new ArrayList<>();
+        System.out.println(QueryProcessor.processQuery(query));
         List<Element> elements = overpassResponse.getElements();
         elements.addAll(overpassResponse1.getElements());
+        System.out.println(QueryProcessor.processQuery(secondQuery));
         for (Element element : elements) {
-            Node node = new Node(element.getId(), element.getLat(), element.getLon());
-            nodes.add(node);
-        }
-        for (Node node : nodes) {
-            System.out.println(node.getId());
+            System.out.println(element.getLat() +" " + element.getLon());
         }
 
     }

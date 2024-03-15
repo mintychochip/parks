@@ -1,6 +1,7 @@
 package org.example;
 
 import com.google.gson.annotations.SerializedName;
+import org.example.container.NodeTags;
 
 import java.util.List;
 
@@ -29,6 +30,9 @@ class Element {
 
     @SerializedName("lon")
     private double lon;
+    @SerializedName("tags")
+    private NodeTags tags;
+    private String source;
 
     public String getType() {
         return type;
@@ -60,5 +64,13 @@ class Element {
 
     public void setLon(double lon) {
         this.lon = lon;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public NodeTags getTags() {
+        return tags;
     }
 }
