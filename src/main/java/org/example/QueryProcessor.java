@@ -1,12 +1,17 @@
 package org.example;
 
 import com.google.gson.Gson;
+import org.example.container.Park;
+import org.example.enums.BuildingTypes;
+import org.example.enums.NodeType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class QueryProcessor {
@@ -14,7 +19,7 @@ public class QueryProcessor {
     private static String apiUrl = "http://overpass-api.de/api/interpreter?data=";
 
     private static String reverseGeoCode = "https://nominatim.openstreetmap.org/reverse?lat=35.3555814&lon=-119.0237178&format=json&extratags=1";
-    public static String processQuery(String query) {
+    public static OverpassResponse processQuery(String query) {
         try {
             String encode = URLEncoder.encode(query, "UTF-8");
             URL url = new URL(apiUrl + encode);
@@ -30,7 +35,7 @@ public class QueryProcessor {
                     while((inputLn = in.readLine()) != null) {
                         response.append(inputLn);
                     }
-                    return response.toString();
+                    return new Gson().fromJson(response.toString(), OverpassResponse.class);
                 } else {
                     System.out.println(responseCode);
                     return null;
@@ -70,6 +75,19 @@ public class QueryProcessor {
         }
 
         return reverseGeocodingResponse;
+    }
+
+    public static List<OverpassResponse> processParkQueries(Park park) {
+        String query = Main.QUERY.replaceAll("&radius", park.getRadius() + "").replaceAll("&coord", park.getCartesian().toString());
+        List<OverpassResponse> responses = new ArrayList<>();
+        for (NodeType nodeType : Main.checkedNodeTypes) {
+            for (BuildingTypes checkedBuildingType : Main.checkedBuildingTypes) {
+                String newQuery = query.replaceAll("&node-type", nodeType.getKey()).replaceAll("&type", checkedBuildingType.getKey());
+                newQuery = nodeType == NodeType.WAY ? newQuery.replaceAll(";&opt",";node(w)") : newQuery.replaceAll(";&opt","");
+                responses.add(processQuery(newQuery));
+            }
+        }
+        return responses;
     }
 
 

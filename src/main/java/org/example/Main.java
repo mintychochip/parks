@@ -6,60 +6,57 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.container.NodeTags;
+import org.example.container.Park;
+import org.example.container.Ward;
+import org.example.enums.BuildingTypes;
+import org.example.enums.NodeType;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Main {
+
+    public Map<Park, List<String>> parksAndAddresses = new HashMap<>();
+    public static final String QUERY = "[out:json];&node-type(around:&radius,&coord)[\"building\"=\"&type\"];&opt;out;";
+
+    public static final List<NodeType> checkedNodeTypes = Arrays.stream(new NodeType[]{NodeType.WAY, NodeType.NODE}).toList();
+    public static final List<BuildingTypes> checkedBuildingTypes = Arrays.stream(new BuildingTypes[]{BuildingTypes.YES, BuildingTypes.HOUSE}).toList();
+
+    private static List<Park> evaluatedParks;
     public static void main(String[] args) {
 
-        int radius = 2500;
+        int radius = 500;
 
-        CartesianCoordinate cartesianCoordinate = new CartesianCoordinate(35.36231, -119.04136);
-        // Define the Overpass API query
-        String query = "[out:json];node(around:" + radius + ", " + cartesianCoordinate + ")[\"building\"=\"yes\"];out;";
-        String secondQuery = "[out:json];way(around:" + radius + ", " + cartesianCoordinate + ")[\"building\"=\"yes\"];node(w);out;";
-
-        // Check if the request was successful
-        Gson gson = new Gson();
-        OverpassResponse overpassResponse = gson.fromJson(QueryProcessor.processQuery(query), OverpassResponse.class);
-        OverpassResponse overpassResponse1 = gson.fromJson(QueryProcessor.processQuery(secondQuery), OverpassResponse.class);
-        List<Element> elements = overpassResponse.getElements();
-        elements.addAll(overpassResponse1.getElements());
-        NewWorkBook newWorkBook = new NewWorkBook("workbook.xlsx");
-        Sheet main = newWorkBook.createSheet("main", new String[]{"Address", "Zipcode", "Ward", "Park"});
-        int count = 1;
-        Row row = main.createRow(count++);
-//        List<String> addresses = new ArrayList<>();
-//        for (Element element : elements) {
-//            try {
-//                ReverseGeocodingResponse reverseGeocodingResponse = QueryProcessor.reverseGeocode(element.getLat(), element.getLon());
-//                String string = reverseGeocodingResponse.toString();
-//                if(!addresses.contains(string)) {
-//                    addresses.add(string);
-//                    System.out.println(string);
-//                }
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//        }
-        Workbook wb = new XSSFWorkbook();
-
-        try {
-            OutputStream out = new FileOutputStream("workbook.xlsx");
-            wb.write(out);
-
-            Sheet newSheet = wb.createSheet("New Sheet");
-            wb.write(out);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        Set<String> addresses = new HashSet<>();
+        evaluatedParks = registerParks(radius);
+        for (Park x : evaluatedParks) {
+            for (OverpassResponse overpassResponse : QueryProcessor.processParkQueries(x)) {
+                overpassResponse.getElements().forEach(y -> {
+                    try {
+                        String s = QueryProcessor.reverseGeocode(y.getLat(), y.getLon()).toString() + " " + x.getWard();
+                        if(addresses.add(s)) {
+                            System.out.println(s);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
         }
+    }
+    private static List<Park> registerParks(int radius) { //gotta move this to a config this is ghetto
+        List<Park> evaluatedParks = new ArrayList<>();
+        evaluatedParks.add(new Park.ParkBuilder()
+                .setCoordinate(new CartesianCoordinate(35.36231,-119.04136))
+                .setName("Saunders")
+                .setWard(Ward.WARD_2).setRadius(radius).build());
+        evaluatedParks.add(new Park.ParkBuilder()
+                .setCoordinate(new CartesianCoordinate(35.37446,-119.03531))
+                .setName("Jastro")
+                .setWard(Ward.WARD_2).build());
+        return evaluatedParks;
     }
 }
