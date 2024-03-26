@@ -20,7 +20,13 @@ public class ReverseGeocodingResponse {
     private Map<String, String> extratags;
     private String[] boundingbox;
 
+    public String getAddresstype() {
+        return addresstype;
+    }
+
     public static class Address {
+
+        private String park;
         private String house_number;
         private String road;
         private String city;
@@ -30,7 +36,6 @@ public class ReverseGeocodingResponse {
         private String postcode;
         private String country;
         private String country_code;
-
         public String getHouse_number() {
             return house_number;
         }
@@ -66,7 +71,12 @@ public class ReverseGeocodingResponse {
         public String getCountry_code() {
             return country_code;
         }
+
+        public String getPark() {
+            return park;
+        }
     }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -102,6 +112,7 @@ public class ReverseGeocodingResponse {
 
         return sb.toString();
     }
+
     // Getters and setters (You can generate these using your IDE or write them manually)
     public int getPlace_id() {
         return place_id;

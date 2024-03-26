@@ -2,6 +2,7 @@ package org.example.container;
 
 import org.example.CartesianCoordinate;
 import org.example.QueryProcessor;
+import org.example.ReverseGeocodingResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +83,14 @@ public class Park {
         this.lon = parkBuilder.lon;
     }
 
+    public Park(ReverseGeocodingResponse reverseGeocodingResponse, int radius, String name) {
+        this.lat = Double.parseDouble(reverseGeocodingResponse.getLat());
+        this.lon = Double.parseDouble(reverseGeocodingResponse.getLon());
+        this.name = name;
+        this.radius = radius;
+    }
+
+
     public double getLat() {
         return lat;
     }
@@ -111,5 +120,9 @@ public class Park {
             return new CartesianCoordinate(lat,lon);
         }
         return null;
+    }
+    @Override
+    public String toString() {
+        return name + " " + this.getCartesian().toString();
     }
 }

@@ -1,5 +1,7 @@
 package org.example.enums;
 
+import java.util.Arrays;
+
 public enum NodeType {
     NODE("node"),
     WAY("way"),

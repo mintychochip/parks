@@ -1,23 +1,15 @@
 package org.example;
 
-import com.google.gson.Gson;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.example.container.NodeTags;
+import org.example.build.Query;
 import org.example.container.Park;
 import org.example.container.Ward;
 import org.example.enums.BuildingTypes;
 import org.example.enums.NodeType;
+import org.example.Element;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.*;
 
 public class Main {
@@ -28,52 +20,52 @@ public class Main {
     public static final List<NodeType> checkedNodeTypes = Arrays.stream(new NodeType[]{NodeType.WAY, NodeType.NODE}).toList();
     public static final List<BuildingTypes> checkedBuildingTypes = Arrays.stream(new BuildingTypes[]{BuildingTypes.YES, BuildingTypes.HOUSE}).toList();
 
-    private static List<Park> evaluatedParks;
-
     public static void main(String[] args) {
 
-        int radius = 250;
+        int radius = 1500;
 
         int count = 1;
+        List<Park> parks = new ArrayList<>();
+        CartesianCoordinate cartesianCoordinate = new CartesianCoordinate(35.37458, -119.03515);
         System.setProperty("log4j.configurationFile", "./path_to_the_log4j2_config_file/log4j2.xml");
         Set<String> addresses = new HashSet<>();
-        NewWorkBook newWorkBook = new NewWorkBook("Z:\\workbook.xlsx");
-        Sheet mainSheet = newWorkBook.createSheet("main sheet", new String[]{"Address", "Lat", "Lon", "Ward"});
-        mainSheet.createRow(count++).createCell(0).setCellValue("//this sheet is auto-generated");
-        evaluatedParks = registerParks(radius);
-        for (Park x : evaluatedParks) {
-            for (OverpassResponse overpassResponse : QueryProcessor.processParkQueries(x)) {
-                if (overpassResponse != null) {
-                    for (Element y : overpassResponse.getElements()) {
-                        try {
-                            String s = QueryProcessor.reverseGeocode(y.getLat(), y.getLon()).toString() + " " + x.getWard();
-                            if (addresses.add(s)) {
-                                Row row = mainSheet.createRow(count++);
-                                row.createCell(0).setCellValue(s);
-                                row.createCell(1).setCellValue(y.getLat());
-                                row.createCell(2).setCellValue(y.getLon());
-                                row.createCell(3).setCellValue(x.getWard().toString());
-                            }
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+        String query = new Query.QueryBuilder().setRadius(radius, cartesianCoordinate).setConvertWayToNode(false).setNodeType(NodeType.WAY).addTag("leisure", "park").addTag("owner", "City of Bakersfield").build().getQuery();
+        if (query != null) {
+            OverpassResponse overpassResponse = QueryProcessor.processQuery(query);
+            for (Element element : overpassResponse.getElements()) {
+                ReverseGeocodingResponse reverseGeocodingResponse1 = QueryProcessor.reverseGeocodeByTypeAndId(element.getNodeType(), element.getId());
+                if (reverseGeocodingResponse1 != null) {
+                    System.out.println(reverseGeocodingResponse1.getAddress().getPark());
+                    parks.add(new Park(reverseGeocodingResponse1, 125, reverseGeocodingResponse1.getAddress().getPark()));
+                }
+            }
+        }
+        for (Park park : parks) {
+            NewWorkBook newWorkBook = new NewWorkBook("Z:\\park-address\\" + park.getName() + ".xlsx");
+            Sheet mainSheet = newWorkBook.createSheet(park.getName(), new String[]{"Address", "Lat", "Lon", "Park"});
+            mainSheet.createRow(count++).createCell(0).setCellValue("//this sheet is auto-generated");
+            List<OverpassResponse> overpassResponses = QueryProcessor.processParkQueries(park);
+            for (OverpassResponse overpassRespons : overpassResponses) {
+                for (Element element : overpassRespons.getElements()) {
+                    ReverseGeocodingResponse reverseGeocodingResponse = null;
+                    try {
+                        reverseGeocodingResponse = QueryProcessor.reverseGeocodeByCartesian(element.getLat(), element.getLon());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (reverseGeocodingResponse != null) {
+                        if (reverseGeocodingResponse.getAddresstype().equals("place")) {
+                            Row row = mainSheet.createRow(count++);
+                            row.createCell(0).setCellValue(reverseGeocodingResponse.toString());
+                            row.createCell(1).setCellValue(reverseGeocodingResponse.getLat());
+                            row.createCell(2).setCellValue(reverseGeocodingResponse.getLon());
+                            row.createCell(3).setCellValue(park.getName());
                         }
                     }
                 }
             }
+            newWorkBook.write();
+            count = 1;
         }
-        newWorkBook.write();
-    }
-
-    private static List<Park> registerParks(int radius) { //gotta move this to a config this is ghetto
-        List<Park> evaluatedParks = new ArrayList<>();
-        evaluatedParks.add(new Park.ParkBuilder()
-                .setCoordinate(new CartesianCoordinate(35.36231, -119.04136))
-                .setName("Saunders")
-                .setWard(Ward.WARD_2).setRadius(radius).build());
-        evaluatedParks.add(new Park.ParkBuilder()
-                .setCoordinate(new CartesianCoordinate(35.37446, -119.03531))
-                .setName("Jastro")
-                .setWard(Ward.WARD_2).build());
-        return evaluatedParks;
     }
 }
