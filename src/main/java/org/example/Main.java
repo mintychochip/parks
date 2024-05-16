@@ -4,10 +4,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.example.build.Query;
 import org.example.container.Park;
-import org.example.container.Ward;
 import org.example.enums.BuildingTypes;
-import org.example.enums.NodeType;
-import org.example.Element;
+import org.example.enums.Relation;
 
 import java.io.*;
 import java.util.*;
@@ -17,7 +15,7 @@ public class Main {
     public Map<Park, List<String>> parksAndAddresses = new HashMap<>();
     public static final String QUERY = "[out:json];&node-type(around:&radius,&coord)[\"building\"=\"&type\"];&opt;out;";
 
-    public static final List<NodeType> checkedNodeTypes = Arrays.stream(new NodeType[]{NodeType.WAY, NodeType.NODE}).toList();
+    public static final List<Relation> CHECKED_RELATIONS = Arrays.stream(new Relation[]{Relation.WAY, Relation.NODE}).toList();
     public static final List<BuildingTypes> checkedBuildingTypes = Arrays.stream(new BuildingTypes[]{BuildingTypes.YES, BuildingTypes.HOUSE}).toList();
 
     public static void main(String[] args) {
@@ -26,10 +24,15 @@ public class Main {
 
         int count = 1;
         List<Park> parks = new ArrayList<>();
+        Query build = Query.builder().setTags(tags -> {
+            tags.addTag("asd", "asd");
+        }).setRelation(Relation.WAY).build();
+        Relation relation = build.getRelation();
+        
         CartesianCoordinate cartesianCoordinate = new CartesianCoordinate(35.37458, -119.03515);
         System.setProperty("log4j.configurationFile", "./path_to_the_log4j2_config_file/log4j2.xml");
         Set<String> addresses = new HashSet<>();
-        String query = new Query.QueryBuilder().setRadius(radius, cartesianCoordinate).setConvertWayToNode(false).setNodeType(NodeType.WAY).addTag("leisure", "park").addTag("owner", "City of Bakersfield").build().getQuery();
+        String query = new QueryImpl.QueryBuilder().setRadius(radius, cartesianCoordinate).setConvertWayToNode(false).setNodeType(Relation.WAY).addTag("leisure", "park").addTag("owner", "City of Bakersfield").build().getQuery();
         if (query != null) {
             OverpassResponse overpassResponse = QueryProcessor.processQuery(query);
             for (Element element : overpassResponse.getElements()) {

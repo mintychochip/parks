@@ -1,15 +1,13 @@
 package org.example.enums;
 
-import java.util.Arrays;
-
-public enum NodeType {
+public enum Relation {
     NODE("node"),
     WAY("way"),
     RELATION("relation");
 
     private final String key;
 
-    NodeType(String key) {
+    Relation(String key) {
         this.key = key;
     }
 

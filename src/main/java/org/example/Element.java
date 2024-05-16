@@ -2,7 +2,7 @@ package org.example;
 
 import com.google.gson.annotations.SerializedName;
 import org.example.container.NodeTags;
-import org.example.enums.NodeType;
+import org.example.enums.Relation;
 
 public class Element {
     @SerializedName("type")
@@ -26,8 +26,8 @@ public class Element {
         return type;
     }
 
-    public NodeType getNodeType() {
-        return Enum.valueOf(NodeType.class, type.toUpperCase());
+    public Relation getNodeType() {
+        return Enum.valueOf(Relation.class, type.toUpperCase());
     }
 
     public long getId() {

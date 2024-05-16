@@ -3,7 +3,7 @@ package org.example;
 import com.google.gson.Gson;
 import org.example.container.Park;
 import org.example.enums.BuildingTypes;
-import org.example.enums.NodeType;
+import org.example.enums.Relation;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -78,18 +78,18 @@ public class QueryProcessor {
     public static List<OverpassResponse> processParkQueries(Park park) {
         String query = Main.QUERY.replaceAll("&radius", park.getRadius() + "").replaceAll("&coord", park.getCartesian().toString());
         List<OverpassResponse> responses = new ArrayList<>();
-        for (NodeType nodeType : Main.checkedNodeTypes) {
+        for (Relation relation : Main.CHECKED_RELATIONS) {
             for (BuildingTypes checkedBuildingType : Main.checkedBuildingTypes) {
-                String newQuery = query.replaceAll("&node-type", nodeType.getKey()).replaceAll("&type", checkedBuildingType.getKey());
-                newQuery = nodeType == NodeType.WAY ? newQuery.replaceAll(";&opt", ";node(w)") : newQuery.replaceAll(";&opt", "");
+                String newQuery = query.replaceAll("&node-type", relation.getKey()).replaceAll("&type", checkedBuildingType.getKey());
+                newQuery = relation == Relation.WAY ? newQuery.replaceAll(";&opt", ";node(w)") : newQuery.replaceAll(";&opt", "");
                 responses.add(processQuery(newQuery));
             }
         }
         return responses;
     }
 
-    public static ReverseGeocodingResponse reverseGeocodeByTypeAndId(NodeType nodeType, long id) {
-        String character = switch (nodeType) {
+    public static ReverseGeocodingResponse reverseGeocodeByTypeAndId(Relation relation, long id) {
+        String character = switch (relation) {
             case WAY -> "W";
             case NODE -> "N";
             default -> throw new RuntimeException();
